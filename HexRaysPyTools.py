@@ -62,14 +62,14 @@ def hexrays_events_callback(*args):
 
         elif item.citype == idaapi.VDI_EXPR:
             if item.e.op == idaapi.cot_num:
-                # number_format = item.e.n.nf                       # idaapi.number_format_t
-                # print "(number) flags: {0:#010X}, type_name: {1}, opnum: {2}".format(
-                #     number_format.flags,
-                #     number_format.type_name,
-                #     number_format.opnum
-                # )
+                number_format = item.e.n.nf                       # idaapi.number_format_t
+                print "(number) flags: {0:#010X}, type_name: {1}, opnum: {2}".format(
+                     number_format.flags,
+                     number_format.type_name,
+                     number_format.opnum
+                 )
                 idaapi.attach_action_to_popup(form, popup, Actions.GetStructureBySize.name, None)
-            elif item.e.op == idaapi.cot_var:
+        elif item.e.op == idaapi.cot_var:
                 # Check if we clicked on variable that is a pointer to a structure that is potentially part of
                 # containing structure
                 if item.e.v.idx in potential_negatives:
@@ -108,57 +108,58 @@ def hexrays_events_callback(*args):
                 return 1
 
     elif hexrays_event == idaapi.hxe_maturity:
-        cfunc, level_of_maturity = args[1:]
+        #cfunc, level_of_maturity = args[1:]
+            pass
+        #if level_of_maturity == idaapi.CMAT_BUILT:
+            ## print '=' * 40
+            ## print '=' * 15, "LEVEL", level_of_maturity, '=' * 16
+            ## print '=' * 40
+            ## print cfunc
 
-        if level_of_maturity == idaapi.CMAT_BUILT:
+            ## First search for CONTAINING_RECORD made by Ida
+            #visitor = NegativeOffsets.SearchVisitor(cfunc)
+            #visitor.apply_to(cfunc.body, None)
+            #negative_lvars = visitor.result
+
+            ## Second get saved information from comments
+            #lvars = cfunc.get_lvars()
+            #for idx in xrange(len(lvars)):
+                #result = NegativeOffsets.parse_lvar_comment(lvars[idx])
+                #if result and result.tinfo.equals_to(lvars[idx].type().get_pointed_object()):
+                    #negative_lvars[idx] = result
+
+            ## Third make an analysis of local variables that a structure pointers and have reference that pass
+            ## through structure boundaries. This variables will be considered as potential pointers to substructure
+            ## and will get a menu on right click that helps to select Containing Structure from different libraries
+
+            #structure_pointer_variables = {}
+            #for idx in set(range(len(lvars))) - set(negative_lvars.keys()):
+                #if lvars[idx].type().is_ptr():
+                    #pointed_tinfo = lvars[idx].type().get_pointed_object()
+                    #if pointed_tinfo.is_udt():
+                        #structure_pointer_variables[idx] = pointed_tinfo
+
+            #if structure_pointer_variables:
+                #visitor = NegativeOffsets.AnalyseVisitor(structure_pointer_variables, potential_negatives)
+                #visitor.apply_to(cfunc.body, None)
+
+            #if negative_lvars:
+                #visitor = NegativeOffsets.ReplaceVisitor(negative_lvars)
+                #visitor.apply_to(cfunc.body, None)
+
+        #elif level_of_maturity == idaapi.CMAT_TRANS1:
+            #pass
+            ##visitor = SwapThenElseVisitor(cfunc.entry_ea)
+            ##visitor.apply_to(cfunc.body, None)
+
+        #elif level_of_maturity == idaapi.CMAT_TRANS2:
+            #pass
             # print '=' * 40
             # print '=' * 15, "LEVEL", level_of_maturity, '=' * 16
             # print '=' * 40
             # print cfunc
-
-            # First search for CONTAINING_RECORD made by Ida
-            visitor = NegativeOffsets.SearchVisitor(cfunc)
-            visitor.apply_to(cfunc.body, None)
-            negative_lvars = visitor.result
-
-            # Second get saved information from comments
-            lvars = cfunc.get_lvars()
-            for idx in xrange(len(lvars)):
-                result = NegativeOffsets.parse_lvar_comment(lvars[idx])
-                if result and result.tinfo.equals_to(lvars[idx].type().get_pointed_object()):
-                    negative_lvars[idx] = result
-
-            # Third make an analysis of local variables that a structure pointers and have reference that pass
-            # through structure boundaries. This variables will be considered as potential pointers to substructure
-            # and will get a menu on right click that helps to select Containing Structure from different libraries
-
-            structure_pointer_variables = {}
-            for idx in set(range(len(lvars))) - set(negative_lvars.keys()):
-                if lvars[idx].type().is_ptr():
-                    pointed_tinfo = lvars[idx].type().get_pointed_object()
-                    if pointed_tinfo.is_udt():
-                        structure_pointer_variables[idx] = pointed_tinfo
-
-            if structure_pointer_variables:
-                visitor = NegativeOffsets.AnalyseVisitor(structure_pointer_variables, potential_negatives)
-                visitor.apply_to(cfunc.body, None)
-
-            if negative_lvars:
-                visitor = NegativeOffsets.ReplaceVisitor(negative_lvars)
-                visitor.apply_to(cfunc.body, None)
-
-        elif level_of_maturity == idaapi.CMAT_TRANS1:
-
-            visitor = SwapThenElseVisitor(cfunc.entry_ea)
-            visitor.apply_to(cfunc.body, None)
-
-        elif level_of_maturity == idaapi.CMAT_TRANS2:
-            # print '=' * 40
-            # print '=' * 15, "LEVEL", level_of_maturity, '=' * 16
-            # print '=' * 40
-            # print cfunc
-            visitor = SpaghettiVisitor()
-            visitor.apply_to(cfunc.body, None)
+            #visitor = SpaghettiVisitor()
+            #visitor.apply_to(cfunc.body, None)
     return 0
 
 
@@ -177,7 +178,7 @@ class MyPlugin(idaapi.plugin_t):
             return idaapi.PLUGIN_SKIP
 
         Helper.temporary_structure = TemporaryStructureModel()
-        # Actions.register(Actions.CreateVtable)
+        Actions.register(Actions.CreateVtable)
         Actions.register(Actions.ShowGraph)
         Actions.register(Actions.ShowClasses)
         Actions.register(Actions.GetStructureBySize)
@@ -219,7 +220,7 @@ class MyPlugin(idaapi.plugin_t):
     def term():
         if Helper.temporary_structure:
             Helper.temporary_structure.clear()
-        # Actions.unregister(Actions.CreateVtable)
+        Actions.unregister(Actions.CreateVtable)
         Actions.unregister(Actions.ShowGraph)
         Actions.unregister(Actions.ShowClasses)
         Actions.unregister(Actions.GetStructureBySize)
@@ -245,5 +246,5 @@ class MyPlugin(idaapi.plugin_t):
 
 def PLUGIN_ENTRY():
     idaapi.notify_when(idaapi.NW_OPENIDB, Helper.init_demangled_names)
-    idaapi.notify_when(idaapi.NW_OPENIDB, Helper.init_imported_ea)
+    #idaapi.notify_when(idaapi.NW_OPENIDB, Helper.init_imported_ea)
     return MyPlugin()

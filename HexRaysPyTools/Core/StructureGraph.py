@@ -150,8 +150,11 @@ class StructureGraph:
         self.upward_edges = {key: [] for key in self.local_types.keys()}
 
         for key, value in self.edges:
-            self.downward_edges[key].append(value)
-            self.upward_edges[value].append(key)
+            try:
+                self.downward_edges[key].append(value)
+                self.upward_edges[value].append(key)
+            except Exception as e:
+                pass
 
     def generate_final_edges_down(self, node):
         if node not in self.visited_downward:
